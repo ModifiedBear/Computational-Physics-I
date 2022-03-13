@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import functools
 
 plt.rcParams['figure.dpi'] = 120
-#plt.style.use('dark_background')
+plt.style.use('dark_background')
 plt.rcParams['figure.figsize'] = (6,6)
 plt.rcParams.update({
   'font.size': 15,
@@ -200,7 +200,8 @@ if __name__ == "__main__":
     for jj in range(50):
       vol = [get_vol(n_vec[ii], N_new) for ii in range(len(n_vec))]
       #ax1.plot(n_vec, vol, 'oc', fillstyle='none', alpha=.65)
-      ax1.plot(n_vec, vol, 'oc',  alpha=.65)
+      ax1.plot(n_vec, vol, '#bfbbd9',marker='o',linestyle='None',  alpha=.55)
+
       
     ax1.grid(alpha=0.5)
     plt.savefig("Average_Vol_n.png")
