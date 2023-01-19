@@ -29,8 +29,8 @@ function init(nx, ny)
   c = 0.3
   h = 1. # spatial width
   k = 1. # time step width
-  α = ones(nx, ny) .* ((c*k) / h)^2 # alpha squared ()
-  κ = α .* (k/h);
+  α = ones(nx, ny) .* ((c*k) / h)^2 # alpha SQUARED ()
+  κ = sqrt.(α) .* (k/h) #.* 4; # i don't know why I have to multiply it by 4, perhaps because of alha squared
 
   #α[134:138, 1:45] .= 0;
   #α[130:134,:] .= 0;
@@ -39,7 +39,8 @@ function init(nx, ny)
   #α[134:138, 55:95] .= 0;
   #α[134:138, 105:end] .= 0;
   
-  Z_new = [exp(- 0.1 * (x-5)^2 - 0.1 * (y-5)^2) for x in xs, y in ys]
+  #Z_new = [exp(- 0.1 * (x-5)^2 - 0.1 * (y-5)^2) for x in xs, y in ys]
+  Z_new = zeros(nx, ny)#[exp(- 0.1 * (x)^2 - 0.1 * (y)^2) for x in xs, y in ys]
   Z = zeros(nx, ny)
   Z_old = zeros(nx, ny)
   #data = zeros(N, nx+1, ny+1)
@@ -55,6 +56,7 @@ function oh2(u, u_new, u_old, α, κ, M, nx, ny,n)
       # you NEED to use copy(), this isn't python
       ω = 0.15
       #u_new[nx-2:nx-1,:] .= 10 .* sin(ω * ii)
+      u_new[nx÷2, ny÷2] = 10 .* sin(ω * ii)
       M[ii,:,:] = copy(u_new)
       u_old = copy(u)
       u = copy(u_new)
@@ -64,10 +66,10 @@ function oh2(u, u_new, u_old, α, κ, M, nx, ny,n)
               u_new[ii, jj] += 2 * u[ii, jj] - u_old[ii, jj]
 
               # absorbing boundaries
-              #u_new[1, jj] = u[2,   jj]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[2,   jj]-u[1, jj])
-              #u_new[nx,jj] = u[nx-1,jj]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[nx-1,jj]-u[nx,jj])
-              #u_new[ii, 1] = u[ii,   2]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[ii,   2]-u[ii, 1])
-              #u_new[ii,ny] = u[ii,ny-1]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[ii,ny-1]-u[ii,ny])
+              u_new[1, jj] = u[2,   jj]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[2,   jj]-u[1, jj])
+              u_new[nx,jj] = u[nx-1,jj]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[nx-1,jj]-u[nx,jj])
+              u_new[ii, 1] = u[ii,   2]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[ii,   2]-u[ii, 1])
+              u_new[ii,ny] = u[ii,ny-1]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[ii,ny-1]-u[ii,ny])
           end
       end
       # no need to update boudnary
@@ -96,7 +98,7 @@ begin
   
 end
 
-begin
+#=begin
   set_theme!(theme_black())
   custom_cmap=[RGBAf(c.r, c.g, c.b, 0.05) for c in to_colormap(:grays)]
   f = Figure(resolution=(500,500))   
@@ -113,3 +115,4 @@ begin
       
   end
 end
+=#
