@@ -18,14 +18,14 @@ function apply_boundaries(mat, nx, ny)
     #M[width_x + 1:(end-width_x), width_y+1:(end-width_y)] .= 2
     
     # capacitor
-    #M[width_x + 1, width_y:(end-width_y)] .= 1
-    #M[end - width_x + 1, width_y:(end-width_y)] .= -1
+    M[width_x + 1, width_y:(end-width_y)] .= 1
+    M[end - width_x + 1, width_y:(end-width_y)] .= -1
     
     # particles
-    M[width_x, width_y] = -1;
-    M[end-width_x,end-width_y] = 1;
-    M[15, 45] = 1;
-    M[80, 31] = -1;
+    #M[width_x, width_y] = -1;
+    #M[end-width_x,end-width_y] = 1;
+    #M[15, 45] = 1;
+    #M[80, 31] = -1;
     
     
     return M
@@ -65,9 +65,9 @@ function relaxation(mat, nx, ny, N, tol)
     return mat;
 end
 
-function main()
+begin
     dx, dy = 0.1,0.1;
-    xs, ys = -5:dx:5, -5:dy:5;
+    xs, ys = -1:dx:1, -1:dy:1;
     nx = length(xs);
     ny = length(ys);
     N = 5000;
@@ -85,18 +85,28 @@ function main()
     Ey = Ey ./ lengths;
 
     set_theme!(theme_black())
-    fig = Figure(resolution=(1000,500))
-    ax = [Axis(fig[1,1]), Axis3(fig[1,2], elevation = 0.15pi, azimuth = -0.25pi)]
-    hm=heatmap!(ax[1], xs, ys,V; colormap=Reverse(:roma))
-    sf=surface!(ax[2], xs, ys,V; colormap=Reverse(:roma),shading = true)
-    ct=contour!(ax[1], xs, ys, V; levels=-0.5:0.07:0.5, color=:black)
-    ct3=contour3d!(ax[2], xs, ys, V; levels=-0.5:0.07:0.5, color=:black)
+    fig = Figure(resolution=(1000,800))
+    ax = [Axis(fig[1,1], xlabel="x",ylabel="y"), 
+          Axis3(fig[1,2], 
+            elevation = 0.15pi, 
+            azimuth = -0.25pi,
+            zlabel="V",
+            aspect=(2,2,3)),
+          Axis(fig[1,3],xlabel="x", ylabel="y")]
+    #hm=heatmap!(ax[1], xs, ys,V; colormap=Reverse(:roma))
+
+    #sf=surface!(ax[2], xs, ys,V; colormap=Reverse(:roma),shading = true)
+    ct=contour!(ax[1], xs, ys, V; levels=-0.6:0.07:0.6, color=:white)
+    #ct3=contour3d!(ax[2], xs, ys, V; levels=-0.5:0.07:0.5, color=:white)
+    wireframe!(ax[2], xs, ys, V,color=:white,shininess=0,linewidth=1.)
+
+
     ax[1].aspect = DataAspect()
-    cm=Colorbar(fig[1,3], hm; label=L"\phi /\text{Volts}", tellheight=true)
+    #cm=Colorbar(fig[1,3], hm; label=L"\phi /\text{Volts}", tellheight=true)
     rowsize!(fig.layout, 1, ax[1].scene.px_area[].widths[2]) # set colorbar height
     save("FEM-2"*string(now())*".png", fig)
     fig
-
+    
 end
 
 # for quiver plotx

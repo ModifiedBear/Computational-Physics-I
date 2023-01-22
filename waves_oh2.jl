@@ -1,6 +1,7 @@
 using LinearAlgebra
 using CairoMakie
 using BenchmarkTools
+using LaTeXStrings
 
 function get_boundary_indices(nx, ny, bsize)
   # this can be improved 
@@ -30,7 +31,7 @@ function init(nx, ny)
   h = 1. # spatial width
   k = 1. # time step width
   α = ones(nx, ny) .* ((c*k) / h)^2 # alpha SQUARED ()
-  κ = sqrt.(α) .* (k/h) #.* 4; # i don't know why I have to multiply it by 4, perhaps because of alha squared
+  κ = sqrt.(α) .* (k/h)#.* 4; # i don't know why I have to multiply it by 4, perhaps because of alha squared
 
   #α[134:138, 1:45] .= 0;
   #α[130:134,:] .= 0;
@@ -51,12 +52,13 @@ end
 
 function oh2(u, u_new, u_old, α, κ, M, nx, ny,n)
   # better than the vectorized format
-  boundary=get_boundary_indices(nx, ny, 1)
+  boundary=1
   for ii in 1:n
       # you NEED to use copy(), this isn't python
-      ω = 0.15
-      #u_new[nx-2:nx-1,:] .= 10 .* sin(ω * ii)
-      u_new[nx÷2, ny÷2] = 10 .* sin(ω * ii)
+      ω = 0.1
+      #u_new[nx-boundary-1:nx-boundary, div(ny,3) : ny - div(ny,3)] .= 10 .* sin(ω * ii)
+      u_new[76,76] = 10 * sin(ω * ii)
+      #u_new[nx÷2, ny÷2] = 10 .* sin(ω * ii)
       M[ii,:,:] = copy(u_new)
       u_old = copy(u)
       u = copy(u_new)
@@ -66,10 +68,18 @@ function oh2(u, u_new, u_old, α, κ, M, nx, ny,n)
               u_new[ii, jj] += 2 * u[ii, jj] - u_old[ii, jj]
 
               # absorbing boundaries
-              u_new[1, jj] = u[2,   jj]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[2,   jj]-u[1, jj])
-              u_new[nx,jj] = u[nx-1,jj]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[nx-1,jj]-u[nx,jj])
-              u_new[ii, 1] = u[ii,   2]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[ii,   2]-u[ii, 1])
-              u_new[ii,ny] = u[ii,ny-1]  + (κ[ii,jj]-1)/(κ[ii,jj]+1) * (u_new[ii,ny-1]-u[ii,ny])
+              #if ii == 1 || ii == 2
+                u_new[1, jj] = u[2,   jj]  + (κ[1 ,jj]-1)/(κ[1 ,jj]+1) * (u_new[2,   jj]-u[1, jj])
+              #end
+              #if ii == nx || ii == nx-1
+                u_new[nx,jj] = u[nx-1,jj]  + (κ[nx,jj]-1)/(κ[nx,jj]+1) * (u_new[nx-1,jj]-u[nx,jj])
+              #end
+              #if jj == 1 || jj == 2
+                u_new[ii, 1] = u[ii,   2]  + (κ[ii, 1]-1)/(κ[ii, 1]+1) * (u_new[ii,   2]-u[ii, 1])
+              #end
+              #if jj == ny || jj == ny-1
+                u_new[ii,ny] = u[ii,ny-1]  + (κ[ii,ny]-1)/(κ[ii,ny]+1) * (u_new[ii,ny-1]-u[ii,ny])
+              #end
           end
       end
       # no need to update boudnary
@@ -79,22 +89,24 @@ function oh2(u, u_new, u_old, α, κ, M, nx, ny,n)
   return M
 end  
 
-function get_plots(V, x, y)
+function get_plots(V, x, y,N)
   set_theme!(theme_black())
   custom_cmap=[RGBAf(c.r, c.g, c.b, 0.05) for c in to_colormap(:grays)]
   fig = Figure(resolution=(500,500))
-  ax = Axis(fig[1,1])
+  ax = Axis(fig[1,1], 
+    title="Absorbing Boundary Conditions O(h2), T = "*string(N),
+    subtitle=L"f(t)=A\,\sin (\omega t)")
   ax.aspect = DataAspect() 
-  heatmap!(ax,x,y, norm.(V); colormap=Reverse(:Spectral), interpolate=false)
+  hm=heatmap!(ax,x,y, norm.(V); colormap=Reverse(:Spectral), interpolate=true)
   fig
 end
 
 begin
-  N = 200
-  nx, ny = 100,100
+  N = 600
+  nx, ny = 151,151
   U, U_new, U_old, A,K, xs, ys = init(nx,ny);
-  data = oh2(U, U_new, U_old, A, K, zeros(N, nx, ny),nx, ny, N);
-  get_plots(data[end,:,:], xs, ys)
+  bdat2 = @benchmark data = oh2(U, U_new, U_old, A, K, zeros(N, nx, ny),nx, ny, N);
+  get_plots(data[end,:,:], xs, ys,N)
   
 end
 
